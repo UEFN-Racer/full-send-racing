@@ -1,0 +1,15 @@
+name = "full-send-racing-analytics"
+main = "worker/index.js"
+compatibility_date = "2026-11-07"
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "full-send-racing-analytics"
+database_id = "REPLACE_AFTER_PROVISIONING"
+migrations_dir = "migrations"
+
+[vars]
+ISLAND_CODE = "0400-9013-9315"
