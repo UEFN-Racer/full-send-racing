@@ -5,33 +5,58 @@ const INTERVALS=["minute","hour","day"];
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization","Cache-Control":"public, max-age=60"};
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8",...cors}})}
 function auth(req,env){const value=req.headers.get("Authorization")||"";return !!env.ADMIN_TOKEN&&value==="Bearer "+env.ADMIN_TOKEN}
-async function readMetric(code,interval,metric){
- const url=BASE+"/islands/"+encodeURIComponent(code)+"/metrics/"+interval+"/"+metric;
+async function readInterval(code,interval){
+ const url=BASE+"/islands/"+encodeURIComponent(code)+"/metrics/"+interval;
  const response=await fetch(url,{headers:{"Accept":"application/json"},cf:{cacheTtl:0}});
  if(!response.ok) throw new Error("Epic API returned "+response.status);
  return await response.json();
 }
-function points(body){
- if(Array.isArray(body))return body;
- for(const key of ["data","metrics","results","values"])if(Array.isArray(body?.[key]))return body[key];
- if(body&&typeof body==="object"&&("timestamp"in body||"value"in body))return [body];
- return [];
+const aliases={
+ "peak-ccu":["peakCCU","peakCcu","peak-ccu","peak_ccu"],
+ "plays":["plays"],
+ "unique-players":["uniquePlayers","unique-players","unique_players"],
+ "minutes-played":["minutesPlayed","minutes-played","minutes_played"],
+ "minutes-per-player":["minutesPerPlayer","minutes-per-player","minutes_per_player"],
+ "favorites":["favorites"],
+ "recommends":["recommends","recommendations"],
+ "retention-d1":["retentionD1","retention-d1","retention_d1"],
+ "retention-d7":["retentionD7","retention-d7","retention_d7"]
+};
+function metricSeries(body){
+ const source=body?.metrics||body?.data||body;
+ const result=[];
+ if(Array.isArray(source)){
+  for(const item of source){
+   const key=item.metric||item.name||item.key;
+   const canonical=METRICS.find(name=>aliases[name].includes(key));
+   if(!canonical)continue;
+   const series=item.data||item.values||item.points||item.results||[item];
+   if(Array.isArray(series))for(const point of series)result.push({metric:canonical,point});
+  }
+ }else if(source&&typeof source==="object"){
+  for(const metric of METRICS){
+   const key=aliases[metric].find(candidate=>candidate in source);
+   if(!key)continue;
+   const raw=source[key];
+   const series=Array.isArray(raw)?raw:(raw?.data||raw?.values||raw?.points||[]);
+   if(Array.isArray(series))for(const point of series)result.push({metric,point});
+  }
+ }
+ return result;
 }
 async function collect(env){
  let stored=0,errors=[];
  for(const interval of INTERVALS){
-  for(const metric of METRICS){
-   try{
-    const body=await readMetric(CODE,interval,metric);
-    for(const p of points(body)){
-     const at=p.timestamp||p.date||p.time;
-     if(!at)continue;
-     await env.DB.prepare("INSERT OR IGNORE INTO island_metrics (island_code,metric,interval,observed_at,value) VALUES (?,?,?,?,?)").bind(CODE,metric,interval,new Date(at).toISOString(),p.value==null?null:Number(p.value)).run();
-     stored++;
-    }
-   }catch(error){errors.push(interval+"/"+metric+": "+String(error))}
-   await new Promise(resolve=>setTimeout(resolve,220));
-  }
+  try{
+   const body=await readInterval(CODE,interval);
+   for(const {metric,point} of metricSeries(body)){
+    const at=point.timestamp||point.date||point.time;
+    if(!at)continue;
+    await env.DB.prepare("INSERT OR IGNORE INTO island_metrics (island_code,metric,interval,observed_at,value) VALUES (?,?,?,?,?)").bind(CODE,metric,interval,new Date(at).toISOString(),point.value==null?null:Number(point.value)).run();
+    stored++;
+   }
+  }catch(error){errors.push(interval+": "+String(error))}
+  await new Promise(resolve=>setTimeout(resolve,300));
  }
  return {stored,errors};
 }
