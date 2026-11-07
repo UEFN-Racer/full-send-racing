@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://uefn-racer.github.io/full-send-racing/sitemap.xml
