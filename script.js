@@ -1,6 +1,6 @@
 const tracks=["Pandora Islands","Corn Maze","Kraken Cove","Lake Canyon","Skull Rock Curves","Easy Sands","Magtown V2","Slurp Canyon","Canyon","Escape Pompeii","Block World","Olympia","Neon Nights","Spooky Death Run","Vipers Run","Anarchy Jungle"];
 const grid=document.getElementById("trackGrid"),search=document.getElementById("trackSearch");
-function drawTracks(){const q=search.value.trim().toLowerCase(),matches=tracks.filter(t=>t.toLowerCase().includes(q));grid.innerHTML=matches.length?matches.map((t,i)=>'<article class="track-card"><span>TRACK / '+String(i+1).padStart(2,"0")+'</span><strong>'+t+'</strong></article>').join(""):'<p>No track by that name. Try a different line.</p>'}
+function drawTracks(){const q=search.value.trim().toLowerCase(),matches=tracks.filter(t=>t.toLowerCase().includes(q));grid.innerHTML=matches.length?matches.map((t,i)=>'<article class="track-card"><strong>'+t+'</strong></article>').join(""):'<p>No track by that name. Try a different line.</p>'}
 search.addEventListener("input",drawTracks);drawTracks();
 const copy=document.getElementById("copy");copy.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("0400-9013-9315");copy.innerHTML="COPIED <span>✓</span>"}catch{copy.textContent="ISLAND CODE: 0400-9013-9315"}});
 document.getElementById("year").textContent=new Date().getFullYear();
