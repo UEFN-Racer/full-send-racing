@@ -1,4 +1,4 @@
-const tracks=["Pandora Islands","Corn Maze","Kraken Cove","Lake Canyon","Skull Rock Curves","Easy Sands","Magtown V2","Slurp Canyon","Canyon","Escape Pompeii","Block World","Olympia","Neon Nights","Spooky Death Run","Vipers Run"];
+const tracks=["Pandora Islands","Corn Maze","Kraken Cove","Lake Canyon","Skull Rock Curves","Easy Sands","Magtown V2","Slurp Canyon","Canyon","Escape Pompeii","Block World","Olympia","Neon Nights","Spooky Death Run","Vipers Run","Anarchy Jungle"];
 const grid=document.getElementById("trackGrid"),search=document.getElementById("trackSearch");
 function drawTracks(){const q=search.value.trim().toLowerCase(),matches=tracks.filter(t=>t.toLowerCase().includes(q));grid.innerHTML=matches.length?matches.map((t,i)=>'<article class="track-card"><span>TRACK / '+String(i+1).padStart(2,"0")+'</span><strong>'+t+'</strong></article>').join(""):'<p>No track by that name. Try a different line.</p>'}
 search.addEventListener("input",drawTracks);drawTracks();
